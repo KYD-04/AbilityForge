@@ -107,12 +107,6 @@ def open_browser(url, delay=2):
 
 def main():
     """Основная функция запуска"""
-    print("=" * 60)
-    print("ГЕНЕРАТОР СПОСОБНОСТЕЙ ПЕРСОНАЖЕЙ")
-    print("=" * 60)
-    print("Автор: MiniMax Agent")
-    print("Дата: 2025-12-04")
-    print("=" * 60)
     
     logger = setup_logging()
     
