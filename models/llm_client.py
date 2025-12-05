@@ -8,8 +8,8 @@ class OllamaClient:
     Клиент для работы с локальной LLM через Ollama API
     """
     
-    def __init__(self, host: str = "localhost", port: int = 57002):
-        self.base_url = f"http://{host}:{port}"
+    def __init__(self, url: str = "http://localhost:11434"):
+        self.base_url = url
         self.logger = logging.getLogger(__name__)
         
     def test_connection(self) -> bool:

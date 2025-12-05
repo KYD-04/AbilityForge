@@ -5,22 +5,97 @@
     box-sizing: border-box;
 }
 
+/* CSS Variables for theming */
+:root {
+    /* Light theme colors */
+    --page-bg: #ffffff;
+    --main-bg: #f8fafd;
+    --accent-color: #0078D4;
+    --text-primary: #333333;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --border-hover: #667eea;
+    --card-bg: #f7fafc;
+    --input-bg: white;
+    --modal-bg: white;
+    --footer-bg: transparent;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --shadow-hover: rgba(102, 126, 234, 0.3);
+    --success-bg: #c6f6d5;
+    --success-text: #22543d;
+    --error-bg: #fed7d7;
+    --error-text: #742a2a;
+    --warning-bg: #fefcbf;
+    --warning-text: #744210;
+}
+
+[data-theme="dark"] {
+    /* Dark theme colors */
+    --page-bg: #212121;
+    --main-bg: #0d1117;
+    --accent-color: #0078D4;
+    --text-primary: #bbbcbd;
+    --text-secondary: #8b949e;
+    --text-muted: #656d76;
+    --border-color: #30363d;
+    --border-hover: #0078D4;
+    --card-bg: #161b22;
+    --input-bg: #21262d;
+    --modal-bg: #21262d;
+    --footer-bg: transparent;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 120, 212, 0.3);
+    --success-bg: rgba(34, 84, 61, 0.3);
+    --success-text: #56d364;
+    --error-bg: rgba(116, 42, 42, 0.3);
+    --error-text: #ff6b6b;
+    --warning-bg: rgba(116, 66, 16, 0.3);
+    --warning-text: #f2cc60;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-    background: linear-gradient(135deg, #212121 0%, #212121 100%);
+    color: var(--text-primary);
+    background: var(--page-bg);
     min-height: 100vh;
+    transition: all 0.3s ease;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    background: white;
+    background: var(--main-bg);
     margin-top: 20px;
     margin-bottom: 20px;
     border-radius: 15px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 40px var(--shadow-color);
+    transition: all 0.3s ease;
+}
+
+/* Header Controls */
+.header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+    background: #106ebe;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-hover);
 }
 
 /* Заголовок */
@@ -28,25 +103,22 @@ header {
     text-align: center;
     margin-bottom: 30px;
     padding: 20px 0;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid var(--border-color);
 }
 
 header h1 {
-    color: #4a5568;
+    color: var(--text-secondary);
     font-size: 2.5em;
     margin-bottom: 15px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 2px 2px 4px var(--shadow-color);
 }
 
 header h1 i {
-    color: #667eea;
+    color: var(--accent-color);
     margin-right: 15px;
 }
 
-.status-panel {
-    margin-top: 15px;
-}
-
+/* Status indicators */
 .llm-status {
     display: inline-flex;
     align-items: center;
@@ -57,13 +129,18 @@ header h1 i {
 }
 
 .llm-status.connected {
-    background: #c6f6d5;
-    color: #22543d;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .llm-status.disconnected {
-    background: #fed7d7;
-    color: #742a2a;
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.llm-status.warning {
+    background: var(--warning-bg);
+    color: var(--warning-text);
 }
 
 .llm-status i {
@@ -80,14 +157,14 @@ main {
 }
 
 .concept-section h2, .abilities-section h2, .results-section h3 {
-    color: #4a5568;
+    color: var(--text-secondary);
     margin-bottom: 20px;
     display: flex;
     align-items: center;
 }
 
 .concept-section h2 i, .abilities-section h2 i, .results-section h3 i {
-    color: #667eea;
+    color: var(--accent-color);
     margin-right: 10px;
 }
 
@@ -100,23 +177,25 @@ main {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: #4a5568;
+    color: var(--text-secondary);
 }
 
-.input-group textarea {
+.input-group textarea, .settings-input {
     width: 100%;
     padding: 12px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     font-size: 14px;
     resize: vertical;
+    background: var(--input-bg);
+    color: var(--text-primary);
     transition: border-color 0.3s ease;
 }
 
-.input-group textarea:focus {
+.input-group textarea:focus, .settings-input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
 }
 
 /* Кнопки */
@@ -139,23 +218,23 @@ main {
 }
 
 .btn-primary {
-    background: #5998e1; /*Цвет кнопки "Добавить способнсоть" до наведения*/
+    background: var(--accent-color);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5998e1; /*Цвет кнопки "Добавить способнсоть" после наведения*/
+    background: #106ebe;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px var(--shadow-hover);
 }
 
 .btn-secondary {
-    background: #a0aec0;
+    background: var(--text-muted);
     color: white;
 }
 
 .btn-secondary:hover {
-    background: #718096;
+    background: var(--text-secondary);
 }
 
 .btn-success {
@@ -210,16 +289,16 @@ main {
 }
 
 .ability-card {
-    background: #f7fafc;
-    border: 2px solid #e2e8f0;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
     transition: all 0.3s ease;
 }
 
 .ability-card:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 12px var(--shadow-hover);
 }
 
 .ability-header {
@@ -272,8 +351,8 @@ main {
 }
 
 .result-ability {
-    background: #f7fafc;
-    border: 2px solid #e2e8f0;
+    background: #212121;
+    border: 2px solid #779dd1;
     border-radius: 12px;
     padding: 20px;
 }
@@ -297,6 +376,8 @@ main {
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
+    margin-top: 20px;
+    margin-bottom: 10px;
 }
 
 .ability-regenerate:hover {
@@ -342,7 +423,7 @@ main {
 }
 
 .modal-content {
-    background-color: white;
+    background-color: var(--modal-bg);
     margin: 5% auto;
     padding: 0;
     border-radius: 12px;
@@ -350,6 +431,11 @@ main {
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
+    color: var(--text-primary);
+}
+
+.settings-modal {
+    max-width: 700px;
 }
 
 .modal-header {
@@ -607,6 +693,98 @@ footer {
     margin-top: 30px;
     color: #718096;
     font-size: 14px;
+}
+
+/* Settings Modal Styles */
+.settings-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.settings-section h4 {
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.settings-section h4 i {
+    color: var(--accent-color);
+    margin-right: 8px;
+}
+
+.theme-selector {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.theme-option:hover {
+    border-color: var(--accent-color);
+    background: var(--card-bg);
+}
+
+.theme-option input[type="radio"] {
+    margin-right: 10px;
+}
+
+.theme-preview {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.theme-preview i {
+    margin-right: 8px;
+    color: var(--accent-color);
+}
+
+.light-theme-preview {
+    background: linear-gradient(135deg, #ffffff, #f8fafd);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.dark-theme-preview {
+    background: linear-gradient(135deg, #212121, #0d1117);
+    padding: 10px;
+    border-radius: 6px;
+    color: var(--text-primary);
+}
+
+.llm-status-settings {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.settings-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-style: italic;
+}
+
+/* Theme selection indicator */
+.theme-option input[type="radio"]:checked + .theme-preview {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
 }
 
 /* Адаптивность */

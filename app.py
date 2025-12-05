@@ -21,13 +21,24 @@ def index():
     """Главная страница"""
     return render_template('index.html')
 
-@app.route('/test_llm')
+@app.route('/test_llm', methods=['POST', 'GET'])
 def test_llm():
     """Тестирование соединения с LLM"""
     try:
-        is_connected = llm_client.test_connection()
+        # Get URL from request or use default
+        if request.method == 'POST':
+            data = request.get_json() or {}
+            ollama_url = data.get('url', 'http://localhost:11434')
+        else:
+            ollama_url = 'http://localhost:11434'
+        
+        # Create temporary client with the specified URL
+        from models.llm_client import OllamaClient
+        temp_client = OllamaClient(url=ollama_url)
+        
+        is_connected = temp_client.test_connection()
         if is_connected:
-            models = llm_client.get_available_models()
+            models = temp_client.get_available_models()
             return jsonify({
                 'status': 'success',
                 'connected': True,
@@ -83,8 +94,18 @@ def generate_abilities():
                 'message': 'Необходимо указать хотя бы одну способность'
             })
         
+        # Получаем URL из настроек (если передан)
+        ollama_url = data.get('ollama_url', 'http://localhost:11434')
+        
+        # Создаем временный клиент с правильным URL
+        from models.llm_client import OllamaClient
+        temp_llm_client = OllamaClient(url=ollama_url)
+        
+        # Создаем временный генератор с правильным клиентом
+        temp_generator = AbilityGenerator(temp_llm_client)
+        
         # Генерируем способности
-        abilities = ability_generator.generate_abilities(concept, ability_configs)
+        abilities = temp_generator.generate_abilities(concept, ability_configs)
         
         return jsonify({
             'status': 'success',
@@ -111,6 +132,22 @@ def regenerate_ability(ability_index):
                 'status': 'error',
                 'message': 'Концепция персонажа обязательна для перегенерации'
             })
+        
+        # Получаем URL из настроек (если передан)
+        ollama_url = data.get('ollama_url', 'http://localhost:11434')
+        
+        # Создаем временный клиент с правильным URL
+        from models.llm_client import OllamaClient
+        temp_llm_client = OllamaClient(url=ollama_url)
+        
+        # Создаем временный генератор с правильным клиентом
+        temp_generator = AbilityGenerator(temp_llm_client)
+        
+        # Сначала генерируем способности, чтобы получить исходные данные
+        # Получаем данные о ранее сгенерированных способностях из сессии или другого источника
+        # Для простоты используем существующий генератор и обновляем его клиент
+        global ability_generator
+        ability_generator.llm_client = temp_llm_client
         
         updated_ability = ability_generator.regenerate_ability_description(ability_index, concept)
         
@@ -139,6 +176,15 @@ def generate_summary():
     try:
         data = request.json
         concept = data.get('concept', '')
+        
+        # Получаем URL из настроек (если передан)
+        ollama_url = data.get('ollama_url', 'http://localhost:11434')
+        
+        # Обновляем клиент глобального генератора
+        from models.llm_client import OllamaClient
+        temp_llm_client = OllamaClient(url=ollama_url)
+        global ability_generator
+        ability_generator.llm_client = temp_llm_client
         
         summary = ability_generator.generate_character_summary(concept)
         

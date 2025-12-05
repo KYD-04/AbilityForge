@@ -3,13 +3,42 @@ class AbilityGeneratorApp {
         this.abilities = [];
         this.concept = '';
         this.editingAbilityIndex = null;
+        this.settings = {
+            theme: localStorage.getItem('theme') || 'light',
+            ollamaUrl: localStorage.getItem('ollamaUrl') || 'http://localhost:57002'
+        };
         this.init();
     }
 
     init() {
+        this.applyTheme(this.settings.theme);
         this.bindEvents();
+        this.initializeSettings();
         this.testLLMConnection();
         this.updateGenerateButtonState();
+    }
+
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        // Update radio buttons
+        const lightTheme = document.getElementById('lightTheme');
+        const darkTheme = document.getElementById('darkTheme');
+        
+        if (lightTheme && darkTheme) {
+            if (theme === 'light') {
+                lightTheme.checked = true;
+            } else {
+                darkTheme.checked = true;
+            }
+        }
+    }
+
+    initializeSettings() {
+        // Set Ollama URL in settings
+        const ollamaUrlInput = document.getElementById('ollamaUrl');
+        if (ollamaUrlInput) {
+            ollamaUrlInput.value = this.settings.ollamaUrl;
+        }
     }
 
     bindEvents() {
@@ -24,6 +53,33 @@ class AbilityGeneratorApp {
             this.concept = e.target.value;
             this.updateGenerateButtonState();
         });
+
+        // Settings modal events
+        document.getElementById('settingsBtn').addEventListener('click', () => this.showSettingsModal());
+        document.getElementById('closeSettings').addEventListener('click', () => this.hideSettingsModal());
+        document.getElementById('cancelSettingsBtn').addEventListener('click', () => this.hideSettingsModal());
+        document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
+        document.getElementById('testConnectionBtn').addEventListener('click', () => this.testConnectionFromSettings());
+
+        // Theme selection
+        const lightTheme = document.getElementById('lightTheme');
+        const darkTheme = document.getElementById('darkTheme');
+        if (lightTheme) {
+            lightTheme.addEventListener('change', () => {
+                if (lightTheme.checked) {
+                    this.applyTheme('light');
+                    this.settings.theme = 'light';
+                }
+            });
+        }
+        if (darkTheme) {
+            darkTheme.addEventListener('change', () => {
+                if (darkTheme.checked) {
+                    this.applyTheme('dark');
+                    this.settings.theme = 'dark';
+                }
+            });
+        }
 
         // Модальное окно
         document.getElementById('close').addEventListener('click', () => this.hideAbilityModal());
@@ -53,22 +109,64 @@ class AbilityGeneratorApp {
 
     async testLLMConnection() {
         try {
-            const response = await fetch('/test_llm');
+            const response = await fetch('/test_llm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: this.settings.ollamaUrl })
+            });
             const data = await response.json();
             
-            const statusElement = document.getElementById('llmStatus');
-            
-            if (data.connected) {
-                statusElement.className = 'llm-status connected';
-                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Ollama подключен';
-            } else {
-                statusElement.className = 'llm-status disconnected';
-                statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Ollama недоступен';
+            const statusElement = document.getElementById('llmStatusSettings');
+            if (statusElement) {
+                if (data.connected) {
+                    statusElement.className = 'llm-status connected';
+                    statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Ollama подключён';
+                } else {
+                    statusElement.className = 'llm-status disconnected';
+                    statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Ollama недоступен';
+                }
             }
         } catch (error) {
-            const statusElement = document.getElementById('llmStatus');
-            statusElement.className = 'llm-status disconnected';
-            statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка подключения';
+            const statusElement = document.getElementById('llmStatusSettings');
+            if (statusElement) {
+                statusElement.className = 'llm-status disconnected';
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка подключения';
+            }
+        }
+    }
+
+    async testConnectionFromSettings() {
+        try {
+            const ollamaUrlInput = document.getElementById('ollamaUrl');
+            const testUrl = ollamaUrlInput ? ollamaUrlInput.value : 'http://localhost:11434';
+            
+            const response = await fetch('/test_llm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: testUrl })
+            });
+            const data = await response.json();
+            
+            const statusElement = document.getElementById('llmStatusSettings');
+            if (statusElement) {
+                if (data.connected) {
+                    statusElement.className = 'llm-status connected';
+                    statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Ollama подключён';
+                } else {
+                    statusElement.className = 'llm-status disconnected';
+                    statusElement.innerHTML = '<i class="fas fa-times-circle"></i> Ollama недоступен';
+                }
+            }
+        } catch (error) {
+            const statusElement = document.getElementById('llmStatusSettings');
+            if (statusElement) {
+                statusElement.className = 'llm-status disconnected';
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ошибка подключения';
+            }
         }
     }
 
@@ -91,6 +189,45 @@ class AbilityGeneratorApp {
     hideAbilityModal() {
         const modal = document.getElementById('parameterModal');
         modal.style.display = 'none';
+    }
+
+    showSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'block';
+        // Test connection when opening settings
+        this.testLLMConnection();
+    }
+
+    hideSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        modal.style.display = 'none';
+    }
+
+    saveSettings() {
+        // Save theme
+        const lightTheme = document.getElementById('lightTheme');
+        const darkTheme = document.getElementById('darkTheme');
+        if (lightTheme && lightTheme.checked) {
+            this.settings.theme = 'light';
+        } else if (darkTheme && darkTheme.checked) {
+            this.settings.theme = 'dark';
+        }
+
+        // Save Ollama URL
+        const ollamaUrlInput = document.getElementById('ollamaUrl');
+        if (ollamaUrlInput) {
+            this.settings.ollamaUrl = ollamaUrlInput.value || 'http://localhost:11434';
+        }
+
+        // Save to localStorage
+        localStorage.setItem('theme', this.settings.theme);
+        localStorage.setItem('ollamaUrl', this.settings.ollamaUrl);
+
+        // Apply theme
+        this.applyTheme(this.settings.theme);
+
+        // Close modal
+        this.hideSettingsModal();
     }
 
     clearModalInputs() {
@@ -425,7 +562,8 @@ class AbilityGeneratorApp {
                 },
                 body: JSON.stringify({
                     concept: concept,
-                    abilities: this.abilities.map(a => a.config)
+                    abilities: this.abilities.map(a => a.config),
+                    ollama_url: this.settings.ollamaUrl
                 })
             });
             
@@ -590,7 +728,10 @@ class AbilityGeneratorApp {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ concept: concept })
+                body: JSON.stringify({ 
+                    concept: concept,
+                    ollama_url: this.settings.ollamaUrl
+                })
             });
             
             const data = await response.json();
@@ -619,7 +760,10 @@ class AbilityGeneratorApp {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ concept: concept })
+                body: JSON.stringify({ 
+                    concept: concept,
+                    ollama_url: this.settings.ollamaUrl
+                })
             });
             
             const data = await response.json();
