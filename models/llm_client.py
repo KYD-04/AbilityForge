@@ -37,13 +37,16 @@ class OllamaClient:
             self.logger.error(f"Failed to get models: {e}")
             return []
     
-    def generate_ability_description(self, concept: str, parameters: Dict[str, Any]) -> Optional[Dict[str, str]]:
+    def generate_ability_description(self, 
+                                     concept: str, 
+                                     parameters: Dict[str, Any],
+                                     keywords: str = '') -> Optional[Dict[str, str]]:
         """
         Генерирует название и описание способности на основе концепции и параметров
         """
         try:
             # Формируем промпт для генерации способности
-            prompt = self._build_ability_prompt(concept, parameters)
+            prompt = self._build_ability_prompt(concept, parameters, keywords)
             
             payload = {
                 "model": "gpt-oss:latest",  # Можно сделать настраиваемым
@@ -117,7 +120,10 @@ class OllamaClient:
             self.logger.error(f"Failed to generate character summary: {e}")
             return None
     
-    def _build_ability_prompt(self, concept: str, parameters: Dict[str, Any]) -> str:
+    def _build_ability_prompt(self, 
+                              concept: str, 
+                              parameters: Dict[str, Any],
+                              keywords: str = '') -> str:
         """
         Строит промпт для генерации описания способности
         """
@@ -128,11 +134,16 @@ class OllamaClient:
             param_descriptions.append(f"'{param_name}': {description} (значение: {value})")
         
         params_text = "; ".join(param_descriptions)
+
+        keywords_section = ""
+        if keywords and keywords.strip():
+            keywords_section = f"\nКлючевые слова для способности: {keywords}\nОбязательно учитывай эти ключевые слова при генерации описания способности.\n"
         
         prompt = f"""Ты генератор способностей для игровых персонажей. 
 
 Концепция персонажа: {concept}
 
+Ключевые слова для способности: {keywords_section}
 Параметры способности: {params_text}
 
 По этим данным придумай название для способности и текстовое описание, которое суммаризирует данную способность. Ответ на русском языке, строго по шаблону:

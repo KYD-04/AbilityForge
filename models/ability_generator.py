@@ -32,15 +32,18 @@ class AbilityGenerator:
         """
         # Генерируем случайные параметры для способности
         parameters = self._generate_random_parameters(config.get('parameters', {}))
+
+        keywords = config.get('keywords', '')
         
         # Получаем описание от LLM
-        ability_description = self.llm_client.generate_ability_description(concept, parameters)
+        ability_description = self.llm_client.generate_ability_description(concept, parameters, keywords)
         
         if ability_description:
             return {
                 'name': ability_description['name'],
                 'description': ability_description['description'],
                 'parameters': parameters,
+                'keywords': keywords,
                 'config': config
             }
         else:
@@ -49,6 +52,7 @@ class AbilityGenerator:
                 'name': 'Сгенерированная способность',
                 'description': f'Способность с параметрами: {parameters}',
                 'parameters': parameters,
+                'keywords': keywords,
                 'config': config
             }
     
@@ -153,7 +157,9 @@ class AbilityGenerator:
         
         return mode_val
     
-    def _get_value_description(self, value: int, descriptions: Dict[int, str]) -> str:
+    def _get_value_description(self, 
+                               value: int, 
+                               descriptions: Dict[int, str]) -> str:
         """
         Определяет описание значения на основе сгенерированного числа
         """
@@ -172,9 +178,13 @@ class AbilityGenerator:
             ability = self.generated_abilities[ability_index]
             
             # Перегенерируем описание с теми же параметрами
+
+            keywords = ability.get('keywords', '')
+
             new_description = self.llm_client.generate_ability_description(
                 concept, 
-                ability['parameters']
+                ability['parameters'],
+                keywords
             )
             
             if new_description:
@@ -182,7 +192,7 @@ class AbilityGenerator:
                 ability['description'] = new_description['description']
                 return ability
             
-        return None
+        return {}
     
     def generate_character_summary(self, concept: str) -> str:
         """

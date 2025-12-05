@@ -114,7 +114,7 @@ def regenerate_ability(ability_index):
         
         updated_ability = ability_generator.regenerate_ability_description(ability_index, concept)
         
-        if updated_ability:
+        if updated_ability != {}:
             return jsonify({
                 'status': 'success',
                 'ability': updated_ability,

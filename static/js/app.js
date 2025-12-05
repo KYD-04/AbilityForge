@@ -2,6 +2,7 @@ class AbilityGeneratorApp {
     constructor() {
         this.abilities = [];
         this.concept = '';
+        this.editingAbilityIndex = null;
         this.init();
     }
 
@@ -19,6 +20,10 @@ class AbilityGeneratorApp {
         document.getElementById('saveProjectBtn').addEventListener('click', () => this.saveProject());
         document.getElementById('loadProjectBtn').addEventListener('click', () => this.loadProject());
         document.getElementById('generateSummaryBtn').addEventListener('click', () => this.generateSummary());
+        document.getElementById('characterConcept').addEventListener('input', (e) => {
+            this.concept = e.target.value;
+            this.updateGenerateButtonState();
+        });
 
         // Модальное окно
         document.getElementById('close').addEventListener('click', () => this.hideAbilityModal());
@@ -78,6 +83,7 @@ class AbilityGeneratorApp {
     showAbilityModal() {
         const modal = document.getElementById('parameterModal');
         modal.style.display = 'block';
+        this.editingAbilityIndex = null;
         this.clearModalInputs();
         this.addParameterInput(); // Добавляем первый параметр по умолчанию
     }
@@ -90,6 +96,10 @@ class AbilityGeneratorApp {
     clearModalInputs() {
         const paramInputs = document.querySelector('.param-inputs');
         paramInputs.innerHTML = '';
+        const keywordsInput = document.getElementById('abilityKeywords');
+        if (keywordsInput) {
+            keywordsInput.value = '';
+        }
     }
 
     addParameterInput() {
@@ -184,6 +194,9 @@ class AbilityGeneratorApp {
     getAbilityConfigFromModal() {
         const paramInputs = document.querySelectorAll('.param-config');
         const parameters = {};
+
+        const keywordsInput = document.getElementById('abilityKeywords');
+        const keywords = keywordsInput ? keywordsInput.value.trim() : '';
         
         paramInputs.forEach(paramDiv => {
             const name = paramDiv.querySelector('.param-name-input').value.trim();
@@ -212,7 +225,7 @@ class AbilityGeneratorApp {
             return null;
         }
         
-        return { parameters: parameters };
+        return { parameters: parameters, keywords: keywords };
     }
 
     showPreviewResult(preview) {
@@ -234,13 +247,19 @@ class AbilityGeneratorApp {
     saveAbilityConfig() {
         const config = this.getAbilityConfigFromModal();
         if (!config) return;
-        
-        const abilityIndex = this.abilities.length;
-        this.abilities.push({
-            index: abilityIndex,
-            config: config,
-            id: `ability_${abilityIndex}`
-        });
+
+        if (this.editingAbilityIndex !== undefined && this.editingAbilityIndex !== null) {
+            // Обновляем существующую способность
+            this.abilities[this.editingAbilityIndex].config = config;
+            this.editingAbilityIndex = null;
+        } else {
+            const abilityIndex = this.abilities.length;
+            this.abilities.push({
+                index: abilityIndex,
+                config: config,
+                id: `ability_${abilityIndex}`
+            });
+        }
         
         this.renderAbilitiesList();
         this.hideAbilityModal();
@@ -252,6 +271,13 @@ class AbilityGeneratorApp {
         container.innerHTML = '';
         
         this.abilities.forEach((ability, index) => {
+            const keywords = ability.config.keywords || '';
+            const keywordsHtml = keywords ? `
+                <div class="ability-keywords">
+                    <i class="fas fa-tags"></i> <strong>Ключевые слова:</strong> ${keywords}
+                </div>
+            ` : '';
+            
             const abilityDiv = document.createElement('div');
             abilityDiv.className = 'ability-card';
             abilityDiv.innerHTML = `
@@ -266,6 +292,7 @@ class AbilityGeneratorApp {
                         </button>
                     </div>
                 </div>
+                ${keywordsHtml}
                 <div class="ability-params">
                     ${Object.entries(ability.config.parameters).map(([name, config]) => `
                         <div class="param-item">
@@ -282,9 +309,84 @@ class AbilityGeneratorApp {
     }
 
     editAbility(index) {
-        // В простой реализации просто показываем модальное окно для редактирования
-        this.showAbilityModal();
-        // Здесь можно добавить логику загрузки существующих параметров в форму
+        // Сохраняем индекс редактируемой способности
+        this.editingAbilityIndex = index;
+        
+        // Показываем модальное окно
+        const modal = document.getElementById('parameterModal');
+        modal.style.display = 'block';
+        this.clearModalInputs();
+        
+        // Загружаем данные способности
+        const ability = this.abilities[index];
+        if (!ability) return;
+        
+        // Устанавливаем ключевые слова
+        const keywordsInput = document.getElementById('abilityKeywords');
+        if (keywordsInput && ability.config.keywords) {
+            keywordsInput.value = ability.config.keywords;
+        }
+        
+        // Загружаем параметры
+        const parameters = ability.config.parameters || {};
+        for (const [name, config] of Object.entries(parameters)) {
+            this.addParameterInputWithData(name, config);
+        }
+    }
+    
+    addParameterInputWithData(name, config) {
+        const paramInputs = document.querySelector('.param-inputs');
+        const paramCount = paramInputs.children.length;
+        
+        const paramDiv = document.createElement('div');
+        paramDiv.className = 'param-config';
+        paramDiv.innerHTML = `
+            <div class="param-header">
+                <h4>Параметр ${paramCount + 1}</h4>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="app.removeParameterInput(this)">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+            <div class="param-inputs-grid">
+                <div>
+                    <label>Название параметра:</label>
+                    <input type="text" value="${name}" class="param-name-input">
+                </div>
+                <div>
+                    <label>Модальное значение:</label>
+                    <input type="number" value="${config.mode || 5}" class="param-mode-input">
+                </div>
+                <div>
+                    <label>Минимальное значение:</label>
+                    <input type="number" value="${config.min || 0}" class="param-min-input">
+                </div>
+                <div>
+                    <label>Максимальное значение:</label>
+                    <input type="number" value="${config.max || 15}" class="param-max-input">
+                </div>
+            </div>
+            <div class="param-descriptions">
+                <h5>Описания значений:</h5>
+                <div class="description-input">
+                    <label>При значении 0 (по умолчанию - параметр не используется):</label>
+                    <input type="text" value="${config.descriptions?.[0] || ''}" class="param-desc-0">
+                </div>
+                <div class="description-input">
+                    <label>При минимальном значении (1):</label>
+                    <input type="text" value="${config.descriptions?.[1] || ''}" class="param-desc-1">
+                </div>
+                <div class="description-input">
+                    <label>При модальном значении:</label>
+                    <input type="text" value="${config.descriptions?.[config.mode] || ''}" class="param-desc-mode">
+                </div>
+                <div class="description-input">
+                    <label>При максимальном значении:</label>
+                    <input type="text" value="${config.descriptions?.[config.max] || ''}" class="param-desc-max">
+                </div>
+            </div>
+        `;
+        
+        paramInputs.appendChild(paramDiv);
     }
 
     removeAbility(index) {
@@ -347,25 +449,133 @@ class AbilityGeneratorApp {
         container.innerHTML = '';
         
         abilities.forEach((ability, index) => {
+            const chartId = `radarChart_${index}`;
+            const keywords = ability.keywords || '';
+            const keywordsHtml = keywords ? `
+                <div class="result-keywords">
+                    <i class="fas fa-tags"></i> <strong>Ключевые слова:</strong> ${keywords}
+                </div>
+            ` : '';
+            
             const abilityDiv = document.createElement('div');
             abilityDiv.className = 'result-ability';
             abilityDiv.innerHTML = `
                 <h4><i class="fas fa-star"></i> ${ability.name}</h4>
                 <p>${ability.description}</p>
-                <div class="ability-params">
-                    <h5>Параметры способности:</h5>
-                    ${Object.entries(ability.parameters).map(([name, data]) => `
-                        <div class="param-item">
-                            <div class="param-name">${name}</div>
-                            <div class="param-values">Значение: ${data.value} - ${data.description}</div>
-                        </div>
-                    `).join('')}
+                ${keywordsHtml}
+                <div class="ability-content-wrapper">
+                    <div class="ability-params">
+                        <h5>Параметры способности:</h5>
+                        ${Object.entries(ability.parameters).map(([name, data]) => `
+                            <div class="param-item">
+                                <div class="param-name">${name}</div>
+                                <div class="param-values">Значение: ${data.value} - ${data.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="radar-chart-container">
+                        <h5><i class="fas fa-compass"></i> Роза ветров параметров</h5>
+                        <canvas id="${chartId}"></canvas>
+                    </div>
                 </div>
                 <button class="ability-regenerate" onclick="app.regenerateAbility(${index})">
-                    <i class="fas fa-refresh"></i> Перегенерировать описание
+                    <i class="fas fa-sync-alt"></i> Перегенерировать описание
                 </button>
             `;
             container.appendChild(abilityDiv);
+            this.createRadarChart(chartId, ability.parameters, ability.config);
+        });
+    }
+
+    createRadarChart(chartId, parameters, config) {
+        const canvas = document.getElementById(chartId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Подготовка данных для графика
+        const labels = [];
+        const values = [];
+        const maxValues = [];
+        
+        for (const [name, data] of Object.entries(parameters)) {
+            labels.push(name);
+            values.push(data.value);
+            
+            // Получаем максимальное значение из конфигурации
+            const rawConfig = data.raw_config || {};
+            const maxVal = parseInt(rawConfig.max) || 15;
+            maxValues.push(maxVal);
+        }
+        
+        // Нормализуем значения для графика (0-100%)
+        const normalizedValues = values.map((val, i) => {
+            const maxVal = maxValues[i] || 15;
+            return Math.round((val / maxVal) * 100);
+        });
+        
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Значение параметра (%)',
+                    data: normalizedValues,
+                    fill: true,
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const idx = context.dataIndex;
+                                const actualValue = values[idx];
+                                const maxVal = maxValues[idx];
+                                return `${labels[idx]}: ${actualValue}/${maxVal} (${context.parsed.r}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        pointLabels: {
+                            color: '#4a5568',
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            }
+                        },
+                        ticks: {
+                            beginAtZero: true,
+                            max: 100,
+                            stepSize: 20,
+                            color: '#718096',
+                            backdropColor: 'transparent'
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
         });
     }
 

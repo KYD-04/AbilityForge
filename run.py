@@ -154,15 +154,6 @@ def main():
         # Определяем URL для открытия
         url = "http://localhost:5000"
         
-        # Запускаем фоновый поток для открытия браузера
-        import threading
-        browser_thread = threading.Thread(
-            target=open_browser, 
-            args=(url,),
-            daemon=True
-        )
-        browser_thread.start()
-        
         print(f"\nСистема запущена!")
         print(f"Откройте в браузере: {url}")
         print(f"Для остановки нажмите Ctrl+C")
